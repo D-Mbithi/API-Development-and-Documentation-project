@@ -100,15 +100,25 @@ def create_app(test_config=None):
     including 404 and 422.
     """
 
-    @app.errorhandle(404)
+    @app.errorhandler(404)
     def not_found(error):
         return jsonify({
             'success': False,
             'error': 404,
-            'message': 'resource not found'
+            'message': 'Resource Not Found'
         }), 404
 
-    @app.errorhandle(422)
+
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        return jsonify({
+            'success': False,
+            'error': 405,
+            'message': 'Method Not Allowed'
+        }), 405
+
+
+    @app.errorhandler(422)
     def unprocessable_entity(error):
         return jsonify({
             'success': False,
