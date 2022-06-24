@@ -102,9 +102,13 @@ def create_app(test_config=None):
         question = Question.query.get_or_404(question_id)
         question.delete()
 
+        total_questions = len(Question.query.all())
+
+
         return jsonify({
             'success': True,
-            'message': 'Question  deleted'
+            'message': 'Question  deleted',
+            'total_questions': total_questions
         })
 
     """
@@ -122,8 +126,6 @@ def create_app(test_config=None):
     def create_question():
         json_data = request.get_json()
 
-        print(json_data)
-
         question = Question(
             question = json_data['question'],
             answer = json_data['answer'],
@@ -133,9 +135,12 @@ def create_app(test_config=None):
 
         question.insert()
 
+        total_questions = len(Question.query.all())
+
         return jsonify({
             'success': True,
-            'message': 'Question created'
+            'message': 'Question created',
+            'total_questions': total_questions
         })
 
     """
@@ -203,20 +208,30 @@ def create_app(test_config=None):
     def quizzes():
         json_data = request.get_json()
 
-        previous_question = json_data['previous_questions']
+        previous_questions = json_data['previous_questions']
         category = json_data['quiz_category']
 
-        previous_questions = []
-        questions = [
-            question.id for question in Question.query.filter_by(
-                category=category['id']
-            ).all()
-        ]
+        if category['id'] == 0:
+            questions = [question.id for question in Question.query.all()]
+        else:
+            questions = [
+                question.id for question in Question.query.filter_by(
+                    category=category['id']
+                ).all()
+            ]
+
         selection = random.choice(questions)
+
+        if selection in previous_questions:
+            selection = random.choice(questions)
 
         question = Question.query.get_or_404(selection)
 
+        previous_questions.append(selection)
+
         question = question.format()
+
+        print(question)
 
         return jsonify({
             'success': True,
@@ -228,6 +243,13 @@ def create_app(test_config=None):
     Create error handlers for all expected errors
     including 404 and 422.
     """
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'success': False,
+            'error': 400,
+            'message': 'Bad Request'
+        }), 400
 
     @app.errorhandler(404)
     def not_found(error):
